@@ -137,8 +137,20 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Tests instrumentés + captures
+      - name: Clé de signature durable (secret)
+        env:
+          KEYSTORE_B64: ${{ secrets.MYNET_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "MYNET_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          fi
+      - name: Tests instrumentés + captures + démarrage de l'APK release
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          MYNET_KEYSTORE_PASSWORD: ${{ secrets.MYNET_KEYSTORE_PASSWORD }}
+          MYNET_KEY_ALIAS: ${{ secrets.MYNET_KEY_ALIAS }}
+          MYNET_KEY_PASSWORD: ${{ secrets.MYNET_KEY_PASSWORD }}
         with:
           api-level: 34
           target: google_apis
@@ -146,8 +158,21 @@ jobs:
           profile: pixel_6
           disable-animations: false
           script: |
-            ./gradlew --no-daemon connectedDebugAndroidTest || (echo "::error::tests instrumentés en échec" && exit 1)
-            mkdir -p ci-output && adb pull /sdcard/Android/media/ch.m4rm0tt.mynetworks/ci ci-output/ || true
+            ./gradlew --no-daemon installDebug installDebugAndroidTest
+            mkdir -p ci-output
+            adb shell am instrument -w -r ch.m4rm0tt.mynetworks.test/androidx.test.runner.AndroidJUnitRunner > ci-output/instrumentation.txt 2>&1 || true
+            adb pull /sdcard/Android/media/ch.m4rm0tt.mynetworks/ci ci-output/ || true
+            ./gradlew --no-daemon assembleRelease
+            adb uninstall ch.m4rm0tt.mynetworks || true
+            adb install app/build/outputs/apk/release/app-release.apk
+            adb logcat -c
+            adb shell am start -W -n ch.m4rm0tt.mynetworks/.MainActivity
+            sleep 10
+            adb exec-out screencap -p > ci-output/release-demarrage.png
+            (adb shell pidof ch.m4rm0tt.mynetworks || echo "processus absent") > ci-output/release-processus.txt
+            adb logcat -d -b crash > ci-output/release-crash.txt || true
+            tail -5 ci-output/instrumentation.txt
+            ! grep -qE "FAILURES!!!|INSTRUMENTATION_FAILED|Process crashed|INSTRUMENTATION_ABORTED" ci-output/instrumentation.txt
       - name: Publier les captures et mesures sur la branche ci-artifacts
         if: always()
         run: |
@@ -162,7 +187,6 @@ jobs:
             fi
             mkdir -p "run-${{ github.run_number }}"
             cp -r ci-output/* "run-${{ github.run_number }}/" || true
-            find app/build/outputs/androidTest-results -name "*.xml" -exec cp {} "run-${{ github.run_number }}/" \; 2>/dev/null || true
             git add "run-${{ github.run_number }}"
             git commit -m "ci: captures et mesures du run ${{ github.run_number }}" || exit 0
             git push origin ci-artifacts
