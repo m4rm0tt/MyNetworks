@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="ch.m4rm0tt.mynetworks.ScreenshotPerfTest" tests="6" failures="0" errors="0" skipped="0" time="157.445" timestamp="2026-10-26T15:08:21" hostname="localhost">
+  <properties>
+    <property name="device" value="emulator-5554 - 14" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="capturesAndPerformance" classname="ch.m4rm0tt.mynetworks.ScreenshotPerfTest" time="128.506" />
+  <testcase name="backupRoundTripWithPhotosWrongPasswordAndCorruption" classname="ch.m4rm0tt.mynetworks.StorageInstrumentedTest" time="26.16" />
+  <testcase name="searchIgnoresCaseAndAccentsAndUpdatesAfterEdit" classname="ch.m4rm0tt.mynetworks.StorageInstrumentedTest" time="0.28" />
+  <testcase name="persistsAcrossReopenAndIsEncryptedAtRest" classname="ch.m4rm0tt.mynetworks.StorageInstrumentedTest" time="0.827" />
+  <testcase name="tagsAreReusedRenamedAndMerged" classname="ch.m4rm0tt.mynetworks.StorageInstrumentedTest" time="0.278" />
+  <testcase name="companyIsLinkedNotDuplicatedAndDeletionKeepsPeople" classname="ch.m4rm0tt.mynetworks.StorageInstrumentedTest" time="0.313" />
+</testsuite>
