@@ -345,7 +345,7 @@ fun NetworkGraph(
                 EdgeKind.SELF_GROUP -> drawSoftCurve(curve, xs[a], ys[a], xs[b], ys[b], Mn.VioletSoft.copy(alpha = 0.45f), max(1.5f, 3f * s), 0.18f)
                 EdgeKind.GROUP_MEMBER -> drawLine(Mn.Violet.copy(alpha = 0.22f), Offset(xs[a], ys[a]), Offset(xs[b], ys[b]), max(1f, 1.6f * s))
                 EdgeKind.SELF_MEMBER -> drawLine(Mn.Violet.copy(alpha = 0.18f), Offset(xs[a], ys[a]), Offset(xs[b], ys[b]), max(1f, 1.4f * s))
-                EdgeKind.SECONDARY -> if (showMembers) drawLine(Mn.TextFaint.copy(alpha = 0.22f), Offset(xs[a], ys[a]), Offset(xs[b], ys[b]), max(0.8f, 1f * s))
+                EdgeKind.SECONDARY -> if (s >= SECONDARY_SCALE) drawLine(Mn.TextFaint.copy(alpha = 0.22f), Offset(xs[a], ys[a]), Offset(xs[b], ys[b]), max(0.8f, 1f * s))
                 EdgeKind.FAVORITE -> {
                     // Lien « légendaire » : halo + trait jaune.
                     drawSoftCurve(curve, xs[a], ys[a], xs[b], ys[b], Mn.Legendary.copy(alpha = 0.08f), max(3f, 8f * s), -0.12f)
@@ -364,8 +364,9 @@ fun NetworkGraph(
                 NodeType.GROUP -> drawGroup(node, xs[i], ys[i], r)
                 NodeType.ENTITY -> {
                     if (hidden(i)) continue
-                    if (r < 2.2f) {
-                        drawCircle(if (node.favorite) Mn.Legendary else Mn.Violet.copy(alpha = 0.7f), max(r, 1.2f), Offset(xs[i], ys[i]))
+                    if (r < 7f) {
+                        // Niveau de détail réduit : un seul disque, sans reflets ni texte.
+                        drawCircle(if (node.favorite) Mn.Legendary else Mn.VioletSoft.copy(alpha = 0.85f), max(r, 1.2f), Offset(xs[i], ys[i]))
                         continue
                     }
                     drawEntity(node, xs[i], ys[i], r, if (s >= PHOTO_MIN_SCALE) thumbs else null, clip, star)
@@ -410,6 +411,7 @@ fun NetworkGraph(
 }
 
 private const val AGGREGATE_SCALE = 0.16f
+private const val SECONDARY_SCALE = 0.35f
 private const val PHOTO_MIN_SCALE = 0.45f
 
 
