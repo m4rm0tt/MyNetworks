@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MyNetworks" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/mn_black</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <color name="mn_black">#FF07060A</color>
+    <color name="mn_violet">#FF9A86D8</color>
+</resources>

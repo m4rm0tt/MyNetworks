@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Un nœud central relié à quatre nœuds, dont un favori (jaune). Zone sûre : cercle de 66dp centré. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:strokeColor="#7E6BB8" android:strokeWidth="2.2" android:strokeLineCap="round"
+        android:pathData="M54,54 Q44,42 36,38 M54,54 Q66,42 74,36 M54,54 Q42,64 36,72" />
+    <path android:strokeColor="#F2C94C" android:strokeWidth="2.6" android:strokeLineCap="round"
+        android:pathData="M54,54 Q66,64 73,71" />
+    <path android:fillColor="#9A86D8" android:pathData="M54,54m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.35" android:pathData="M50,49m-3.5,0a3.5,2.5 0,1 1,7 0a3.5,2.5 0,1 1,-7 0" />
+    <path android:fillColor="#5B4B91" android:pathData="M36,38m-5.5,0a5.5,5.5 0,1 1,11 0a5.5,5.5 0,1 1,-11 0" />
+    <path android:fillColor="#5B4B91" android:pathData="M74,36m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path android:fillColor="#5B4B91" android:pathData="M36,72m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path android:fillColor="#F2C94C" android:pathData="M73,71m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+</vector>
