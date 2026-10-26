@@ -1,0 +1,16 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "kotlin-error",
+      "pattern": [
+        {
+          "regexp": "^e: (?:\\[ksp\\] )?(?:file://)?(.+?\\.kts?):(\\d+):(?:(\\d+) )?(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      ]
+    }
+  ]
+}
