@@ -22,6 +22,8 @@ class GraphNode(
     val photoId: String? = null,
     val kind: EntityKind? = null,
     val memberCount: Int = 0,
+    /** Fiche placée dans un groupe (résumée par le nœud de groupe au faible zoom). */
+    val grouped: Boolean = false,
 )
 
 class GraphEdge(val from: Int, val to: Int, val kind: EdgeKind)
@@ -64,7 +66,7 @@ object GraphLayout {
     const val SELF_R = 64f
     const val NODE_R = 26f
     const val GROUP_R = 44f
-    private const val SPIRAL_C = 42f
+    const val SPIRAL_C = 46f
     private const val GROUP_GAP = 90f
     private val GOLDEN_ANGLE = (PI * (3.0 - sqrt(5.0))).toFloat()
 
@@ -118,7 +120,7 @@ object GraphLayout {
         val i0Self = ceil((selfClear / SPIRAL_C).let { it * it }).toInt()
         for ((i, it) in ungrouped.withIndex()) {
             val (x, y) = spiral(0f, 0f, i + i0Self, 0f)
-            val idx = add(entityNode(it, x, y))
+            val idx = add(entityNode(it, x, y, grouped = false))
             edges.add(GraphEdge(selfIdx, idx, EdgeKind.SELF_MEMBER))
         }
         val innerRadius = if (ungrouped.isEmpty()) SELF_R + 40f
@@ -158,7 +160,7 @@ object GraphLayout {
                 edges.add(GraphEdge(selfIdx, gIdx, EdgeKind.SELF_GROUP))
                 for ((i, it) in list.withIndex()) {
                     val (x, y) = spiral(gx, gy, i + i0Group, angle)
-                    val idx = add(entityNode(it, x, y))
+                    val idx = add(entityNode(it, x, y, grouped = true))
                     edges.add(GraphEdge(gIdx, idx, EdgeKind.GROUP_MEMBER))
                 }
             }
@@ -183,9 +185,9 @@ object GraphLayout {
         return GraphLayoutResult(nodes, edges, index, extent)
     }
 
-    private fun entityNode(it: LayoutItem, x: Float, y: Float) = GraphNode(
+    private fun entityNode(it: LayoutItem, x: Float, y: Float, grouped: Boolean) = GraphNode(
         it.id, NodeType.ENTITY, x, y, NODE_R, it.label, it.initials,
-        favorite = it.favorite, photoId = it.photoId, kind = it.kind,
+        favorite = it.favorite, photoId = it.photoId, kind = it.kind, grouped = grouped,
     )
 
     private fun spiral(cx: Float, cy: Float, i: Int, rotation: Float): Pair<Float, Float> {

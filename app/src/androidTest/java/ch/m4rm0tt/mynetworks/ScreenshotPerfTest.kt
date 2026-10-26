@@ -102,7 +102,7 @@ class ScreenshotPerfTest {
         pause(2500); shot("00-vide.png")
 
         runBlocking { seed(40) }
-        scenario.onActivity { it.vm.camera.initialized = false }
+        scenario.onActivity { it.vm.camera.userMoved = false; it.vm.camera.initialized = false }
         pause(3500); shot("01-reseau-categories.png")
 
         val favId = "p-0"
@@ -140,7 +140,7 @@ class ScreenshotPerfTest {
             val hits = runBlocking { ready().repo.search("helene", false, 50, 0) }
             val searchMs = (SystemClock.elapsedRealtimeNanos() - tq) / 1e6
 
-            scenario.onActivity { it.vm.camera.initialized = false }
+            scenario.onActivity { it.vm.camera.userMoved = false; it.vm.camera.initialized = false }
             pause(4000)
             shot("perf-$n-vue-ensemble.png")
             val frames = Collections.synchronizedList(ArrayList<Double>())

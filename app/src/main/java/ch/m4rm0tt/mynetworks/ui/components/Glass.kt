@@ -56,7 +56,7 @@ fun Modifier.glass(shape: Shape, tint: Color = Mn.Violet, strength: Float = 1f):
         Brush.verticalGradient(
             listOf(
                 tint.copy(alpha = 0.16f * strength).compositeOver(Mn.Surface2),
-                Mn.Surface.copy(alpha = 0.96f),
+                Mn.Surface,
             )
         )
     )

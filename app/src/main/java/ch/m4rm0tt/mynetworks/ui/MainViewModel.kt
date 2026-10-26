@@ -100,6 +100,8 @@ class CameraState {
     var offsetX by mutableFloatStateOf(0f)
     var offsetY by mutableFloatStateOf(0f)
     var initialized by mutableStateOf(false)
+    /** Vrai dès que l'utilisateur déplace ou zoome : plus aucun recadrage automatique. */
+    var userMoved by mutableStateOf(false)
 }
 
 data class FocusRequest(val nodeId: String, val nonce: Long)

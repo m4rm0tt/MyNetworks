@@ -197,8 +197,8 @@ fun EditSheet(
 
         // Photo (sélecteur de photos Android : aucun accès général à la galerie).
         Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            val name = draft.toContact().displayName
-            Avatar(draft.photoId, TextNorm.initials(name), draft.kind, photos, 64.dp)
+            val c = draft.toContact()
+            Avatar(draft.photoId, if (c.hasIdentity) c.initials else "+", draft.kind, photos, 64.dp)
             Column(Modifier.padding(start = 14.dp)) {
                 TextButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                     Text(if (draft.photoId == null) (if (draft.kind == EntityKind.COMPANY) "Ajouter un logo" else "Ajouter une photo") else "Changer", color = Mn.Violet)

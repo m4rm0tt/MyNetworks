@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import ch.m4rm0tt.mynetworks.data.PhotoStore
 import ch.m4rm0tt.mynetworks.domain.EdgeKind
 import ch.m4rm0tt.mynetworks.domain.EntityKind
+import ch.m4rm0tt.mynetworks.domain.GraphLayout
 import ch.m4rm0tt.mynetworks.domain.GraphLayoutResult
 import ch.m4rm0tt.mynetworks.domain.GraphNode
 import ch.m4rm0tt.mynetworks.domain.NodeType
@@ -154,6 +155,7 @@ fun NetworkGraph(
         val idx = shown.index[f.nodeId] ?: return@LaunchedEffect
         if (pulseId == f.nodeId && System.currentTimeMillis() - pulseStart < 300) return@LaunchedEffect
         val n = shown.nodes[idx]
+        camera.userMoved = true
         pulseId = f.nodeId
         pulseStart = System.currentTimeMillis()
         val targetScale = camera.scale.coerceAtLeast(1.1f)
@@ -168,15 +170,27 @@ fun NetworkGraph(
         }
     }
 
-    // --- Cadrage initial ---
-    LaunchedEffect(viewSize, shown) {
-        if (camera.initialized || viewSize == IntSize.Zero || shown.nodes.isEmpty()) return@LaunchedEffect
+    // --- Cadrage : tout le réseau tient à l'écran tant que l'utilisateur n'a pas bougé la vue ---
+    LaunchedEffect(viewSize, shown, camera.initialized) {
+        if (viewSize == IntSize.Zero || shown.nodes.isEmpty()) return@LaunchedEffect
+        if (camera.initialized && camera.userMoved) return@LaunchedEffect
         val w = viewSize.width.toFloat(); val h = viewSize.height.toFloat()
         val extent = max(shown.extent, 260f)
-        camera.scale = (min(w, h) * 0.46f / extent).coerceIn(0.08f, 1.3f)
-        camera.offsetX = w / 2f
-        camera.offsetY = h / 2f
-        camera.initialized = true
+        val ts = (min(w, h) * 0.45f / extent).coerceIn(MIN_SCALE, 1.4f)
+        val tx = w / 2f
+        val ty = h / 2f
+        if (!camera.initialized || reduceMotion) {
+            camera.scale = ts; camera.offsetX = tx; camera.offsetY = ty
+            camera.initialized = true
+        } else {
+            val s0 = camera.scale; val x0 = camera.offsetX; val y0 = camera.offsetY
+            animate(0f, 1f, animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessLow)) { v, _ ->
+                if (camera.userMoved) return@animate
+                camera.scale = s0 + (ts - s0) * v
+                camera.offsetX = x0 + (tx - x0) * v
+                camera.offsetY = y0 + (ty - y0) * v
+            }
+        }
     }
 
     // --- Miniatures visibles, chargées hors du thread UI ---
@@ -217,6 +231,7 @@ fun NetworkGraph(
             }
             .pointerInput(Unit) {
                 detectTransformGestures { centroid, pan, zoom, _ ->
+                    camera.userMoved = true
                     val old = camera.scale
                     val next = (old * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
                     val k = next / old
@@ -233,6 +248,7 @@ fun NetworkGraph(
                             val n = shown.nodes[hit]
                             if (n.type == NodeType.GROUP) {
                                 // Toucher un groupe zoome dessus.
+                                camera.userMoved = true
                                 scope.launch {
                                     val s0 = camera.scale; val x0 = camera.offsetX; val y0 = camera.offsetY
                                     val ts = max(s0, 0.9f).coerceAtMost(MAX_SCALE)
@@ -251,6 +267,13 @@ fun NetworkGraph(
                         }
                     },
                     onDoubleTap = { pos ->
+                        if (hitTest(shown, camera, pos, minTouchPx) == null) {
+                            // Double-toucher le vide : revoir tout le réseau.
+                            camera.userMoved = false
+                            camera.initialized = false
+                            return@detectTapGestures
+                        }
+                        camera.userMoved = true
                         val old = camera.scale
                         val next = (old * 1.8f).coerceAtMost(MAX_SCALE)
                         val k = next / old
@@ -305,12 +328,18 @@ fun NetworkGraph(
         }
 
         val showMembers = s >= AGGREGATE_SCALE
+        fun hidden(i: Int): Boolean = !showMembers && g.nodes[i].grouped
+        // Distance écran approximative entre deux voisins : les noms n'apparaissent que s'ils ont la place.
+        val spacingPx = GraphLayout.SPIRAL_C * 1.55f * s
+        val showNames = spacingPx >= 64f * dens.density
+        val nameMaxPx = (spacingPx * 0.95f).toInt()
 
         // 1. Liens.
         for (e in g.edges) {
             val a = e.from; val b = e.to
             val nb = g.nodes[b]
-            if (!showMembers && nb.type == NodeType.ENTITY && e.kind != EdgeKind.SELF_MEMBER && e.kind != EdgeKind.FAVORITE) continue
+            if (hidden(a) || hidden(b)) continue
+            if (nb.type == NodeType.ENTITY && !showMembers && e.kind != EdgeKind.FAVORITE && e.kind != EdgeKind.SELF_MEMBER) continue
             if (!segmentVisible(a, b)) continue
             when (e.kind) {
                 EdgeKind.SELF_GROUP -> drawSoftCurve(curve, xs[a], ys[a], xs[b], ys[b], Mn.VioletSoft.copy(alpha = 0.45f), max(1.5f, 3f * s), 0.18f)
@@ -319,8 +348,8 @@ fun NetworkGraph(
                 EdgeKind.SECONDARY -> if (showMembers) drawLine(Mn.TextFaint.copy(alpha = 0.22f), Offset(xs[a], ys[a]), Offset(xs[b], ys[b]), max(0.8f, 1f * s))
                 EdgeKind.FAVORITE -> {
                     // Lien « légendaire » : halo + trait jaune.
-                    drawSoftCurve(curve, xs[a], ys[a], xs[b], ys[b], Mn.Legendary.copy(alpha = 0.16f), max(4f, 9f * s), -0.12f)
-                    drawSoftCurve(curve, xs[a], ys[a], xs[b], ys[b], Mn.Legendary.copy(alpha = 0.85f), max(1.5f, 2.4f * s), -0.12f)
+                    drawSoftCurve(curve, xs[a], ys[a], xs[b], ys[b], Mn.Legendary.copy(alpha = 0.08f), max(3f, 8f * s), -0.12f)
+                    drawSoftCurve(curve, xs[a], ys[a], xs[b], ys[b], Mn.Legendary.copy(alpha = 0.6f), max(1.2f, 2f * s), -0.12f)
                 }
             }
         }
@@ -334,7 +363,7 @@ fun NetworkGraph(
                 NodeType.SELF -> drawSelf(node, xs[i], ys[i], r, thumbs, clip)
                 NodeType.GROUP -> drawGroup(node, xs[i], ys[i], r)
                 NodeType.ENTITY -> {
-                    if (!showMembers && r < 1.2f) continue
+                    if (hidden(i)) continue
                     if (r < 2.2f) {
                         drawCircle(if (node.favorite) Mn.Legendary else Mn.Violet.copy(alpha = 0.7f), max(r, 1.2f), Offset(xs[i], ys[i]))
                         continue
@@ -357,27 +386,30 @@ fun NetworkGraph(
             when (node.type) {
                 NodeType.SELF -> {
                     if (thumbs[node.photoId ?: ""] == null) drawCentered(measurer, node.initials, groupStyle.copy(fontSize = (r * 0.42f / (dens.density * dens.fontScale)).coerceIn(10f, 40f).sp), xs[i], ys[i])
-                    drawLabel(measurer, node.label, groupStyle, xs[i], ys[i] + r + 6f, 260)
+                    drawLabel(measurer, node.label, groupStyle, xs[i], ys[i] + r + 6f, (260 * dens.density).toInt())
                 }
                 NodeType.GROUP -> {
                     if (r >= 4f) {
-                        drawLabel(measurer, node.label, groupStyle, xs[i], ys[i] + r + 6f, 280)
-                        drawLabel(measurer, "${node.memberCount}", dimStyle, xs[i], ys[i] - 8f * dens.density, 80)
+                        drawLabel(measurer, node.label, groupStyle, xs[i], ys[i] + r + 6f, (220 * dens.density).toInt())
+                        drawLabel(measurer, "${node.memberCount}", dimStyle, xs[i], ys[i] - 8f * dens.density, (80 * dens.density).toInt())
                     }
                 }
                 NodeType.ENTITY -> {
+                    if (hidden(i)) continue
                     val hasPhoto = s >= PHOTO_MIN_SCALE && node.photoId != null && thumbs[node.photoId] != null
                     if (r >= 11f && !hasPhoto) {
                         drawCentered(measurer, node.initials, labelStyle.copy(fontSize = (r * 0.62f / (dens.density * dens.fontScale)).coerceIn(8f, 30f).sp, fontWeight = FontWeight.SemiBold), xs[i], ys[i])
                     }
-                    if (r >= 20f) drawLabel(measurer, node.label, labelStyle, xs[i], ys[i] + r + 4f, 220)
+                    if (showNames || node.id == selectedId) {
+                        drawLabel(measurer, node.label, labelStyle, xs[i], ys[i] + r + 4f, if (node.id == selectedId) (220 * dens.density).toInt() else nameMaxPx)
+                    }
                 }
             }
         }
     }
 }
 
-private const val AGGREGATE_SCALE = 0.11f
+private const val AGGREGATE_SCALE = 0.16f
 private const val PHOTO_MIN_SCALE = 0.45f
 
 
@@ -403,7 +435,7 @@ private fun hitTest(g: GraphLayoutResult, cam: CameraState, pos: Offset, minTouc
     var bestScore = Float.MAX_VALUE
     val showMembers = s >= AGGREGATE_SCALE
     for ((i, n) in g.nodes.withIndex()) {
-        if (!showMembers && n.type == NodeType.ENTITY) continue
+        if (!showMembers && n.grouped) continue
         val x = n.x * s + cam.offsetX
         val y = n.y * s + cam.offsetY
         val r = max(n.r * s, minTouchPx)
@@ -501,12 +533,19 @@ private fun DrawScope.drawCentered(measurer: androidx.compose.ui.text.TextMeasur
     drawText(layout, topLeft = Offset(cx - layout.size.width / 2f, cy - layout.size.height / 2f))
 }
 
-private fun DrawScope.drawLabel(measurer: androidx.compose.ui.text.TextMeasurer, text: String, style: TextStyle, cx: Float, top: Float, maxWidthDp: Int) {
-    val maxW = (maxWidthDp * density).toInt().coerceAtLeast(1)
-    val layout = measurer.measure(
+private fun DrawScope.drawLabel(measurer: androidx.compose.ui.text.TextMeasurer, text: String, style: TextStyle, cx: Float, top: Float, maxWidthPx: Int) {
+    val maxW = maxWidthPx.coerceAtLeast(1)
+    var layout = measurer.measure(
         text, style, overflow = TextOverflow.Ellipsis, maxLines = 1,
         constraints = Constraints(maxWidth = maxW),
     )
+    // Si le nom complet ne tient pas, on garde le premier mot (souvent le prénom).
+    if (layout.hasVisualOverflow && text.contains(' ')) {
+        layout = measurer.measure(
+            text.substringBefore(' '), style, overflow = TextOverflow.Ellipsis, maxLines = 1,
+            constraints = Constraints(maxWidth = maxW),
+        )
+    }
     val x = cx - layout.size.width / 2f
     if (x > size.width || x + layout.size.width < 0 || top > size.height || top + layout.size.height < 0) return
     // Pastille sombre derrière le texte pour rester lisible sur les liens.
