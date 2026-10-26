@@ -1,0 +1,48 @@
+{
+  "appareil": "Google sdk_gphone64_x86_64 (émulateur CI, API 34)",
+  "avertissement": "Émulateur sans GPU matériel : ces chiffres ne valent pas mesure sur Galaxy A36.",
+  "mesures": [
+    {
+      "entites": 100,
+      "noeuds": 109,
+      "liens": 156,
+      "seed_ms": 1848,
+      "layout_ms": 153.155734,
+      "recherche_ms": 35.133646,
+      "recherche_resultats": 6,
+      "images_mesurees": 176,
+      "image_p50_ms": 69.691835,
+      "image_p90_ms": 100.133474,
+      "image_p99_ms": 116.860314,
+      "images_sup_16ms_pct": 100
+    },
+    {
+      "entites": 1000,
+      "noeuds": 1009,
+      "liens": 1480,
+      "seed_ms": 5536,
+      "layout_ms": 172.610519,
+      "recherche_ms": 1.976717,
+      "recherche_resultats": 50,
+      "images_mesurees": 177,
+      "image_p50_ms": 101.324168,
+      "image_p90_ms": 116.992591,
+      "image_p99_ms": 141.773345,
+      "images_sup_16ms_pct": 100
+    },
+    {
+      "entites": 10000,
+      "noeuds": 10009,
+      "liens": 14722,
+      "seed_ms": 21838,
+      "layout_ms": 732.034924,
+      "recherche_ms": 9.811929,
+      "recherche_resultats": 50,
+      "images_mesurees": 179,
+      "image_p50_ms": 394.771152,
+      "image_p90_ms": 427.725212,
+      "image_p99_ms": 600.137183,
+      "images_sup_16ms_pct": 100
+    }
+  ]
+}
