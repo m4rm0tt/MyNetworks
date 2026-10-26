@@ -22,9 +22,9 @@ abstract class AppDatabase : RoomDatabase() {
          * Aucune migration destructive : en cas de schéma inconnu, Room lève une erreur et la
          * base reste intacte (jamais de fallbackToDestructiveMigration).
          */
-        fun open(context: Context, passphrase: ByteArray): AppDatabase {
+        fun open(context: Context, passphrase: ByteArray, name: String = NAME): AppDatabase {
             System.loadLibrary("sqlcipher")
-            return Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, NAME)
+            return Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, name)
                 .openHelperFactory(SupportOpenHelperFactory(passphrase))
                 .build()
         }

@@ -63,7 +63,7 @@ import ch.m4rm0tt.mynetworks.ui.theme.Mn
 import ch.m4rm0tt.mynetworks.ui.theme.MyNetworksTheme
 
 class MainActivity : FragmentActivity(), ExternalActions {
-    private val vm: MainViewModel by viewModels()
+    internal val vm: MainViewModel by viewModels()
     private val app get() = application as MyNetworksApp
 
     private var locked by mutableStateOf(false)
